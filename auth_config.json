@@ -1,0 +1,7 @@
+{
+  "domain": "dev--vae0du0.us.auth0.com",
+  "clientId": "OrKeNbV7EgHqmH7DPBWvTbw8nv7T44pT",
+  "audience": "http://my-api/",
+  "apiUri": "http://localhost:3001",
+  "appUri": ["http://localhost:3000", "https://42-frontend-369basrlo-dcreado.vercel.app/"]
+}
