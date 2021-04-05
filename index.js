@@ -89,7 +89,10 @@ app.get('/api/profile', checkJwt, async (req, res) => {
     const values = [req.user['https://pizza42.com/email']];
     const client = await pool.connect();
     const result = await client.query(text,values);
-    if(result.rowCount == 1){
+    if(result.rowCount == 0){
+      res.status(200).json({});
+    }
+    else if(result.rowCount == 1){
       res.status(200).json(result.rows[0]);
     } else {
       return res.status(500).send("sanity problem... the email was found on more than one account");
