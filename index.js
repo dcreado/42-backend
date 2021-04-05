@@ -140,10 +140,10 @@ app.post('/api/profile', checkJwt, async (req, res) => {
           city,
           state,
           zip
-      ) value ( $1, $2, $3, $4, $5, $6, $7, $8)
+      ) values ( $1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING *`
 
-      const result = await client.query(text,values);
+      const result = await client.query(insertText,values);
       if(result.rowCount == 1){
         res.status(200).json(result.rows[0]);
       } else {
