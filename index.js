@@ -18,11 +18,7 @@ if (!authConfig.domain || !authConfig.audience) {
 
 app.use(morgan('dev'));
 app.use(helmet());
-app.use(
-  cors({
-    origin: authConfig.appUri,
-  })
-);
+app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
