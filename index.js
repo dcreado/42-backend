@@ -127,7 +127,25 @@ app.post('/api/profile', checkJwt, async (req, res) => {
     if(result.rowCount == 1){
       res.status(200).json(result.rows[0]);
     } else {
-      return res.status(500).send("sanity problem... the email was found on more than one account");
+
+      const insertText = `insert into customers
+        ( email,
+          given_name,
+          family_name,
+          address,
+          address2,
+          city,
+          state,
+          zip
+      ) value ( $1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING *`
+
+      const result = await client.query(text,values);
+      if(result.rowCount == 1){
+        res.status(200).json(result.rows[0]);
+      } else {
+        return res.status(500).send("sanity problem... the email was found on more than one account");
+      }
     }
 
     client.release();
@@ -172,7 +190,45 @@ app.get('/dump', async (req, res) => {
       }
     })
 
+    app.post('/api/login', async (req, res) => {
+        try {
+          var authentication = bauth(req);
+          const text = 'select email from customers where email = $1 and password = $2'
+          const values = [authentication.name, authentication.pass]
+          const client = await pool.connect();
+          const result = await client.query(text,values);
+          if(result.rowCount == 1){
+            res.status(200).json({"result": "success"});
+          } else {
+            return res.status(401).send("invalid username or password");
+          }
 
+          client.release();
+        } catch (err) {
+          console.error(err);
+          return res.status(401).send("invalid username or password");
+        }
+      })
+
+    app.post('/api/idlookup', async (req, res) => {
+        try {
+
+          const text = 'select email from customers where email = $1'
+          const values = [req.body.email]
+          const client = await pool.connect();
+          const result = await client.query(text,values);
+          if(result.rowCount == 1){
+            res.status(200).json({"result": "success"});
+          } else {
+            return res.status(401).send("invalid username");
+          }
+
+          client.release();
+        } catch (err) {
+          console.error(err);
+          return res.status(401).send("invalid username");
+        }
+      })
 
 const port = process.env.PORT || 3001;
 
