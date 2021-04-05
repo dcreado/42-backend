@@ -1,7 +1,7 @@
 {
-  "name": "node-js-getting-started",
+  "name": "42-backend",
   "version": "0.3.0",
-  "description": "A sample Node.js app using Express 4",
+  "description": "zza 42 backend api using Express 4 and Auth0",
   "engines": {
     "node": "14.x"
   },
@@ -19,7 +19,8 @@
     "faker": "^5.5.2",
     "helmet": "^4.4.1",
     "jwks-rsa": "^2.0.2",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "pg": "^8.5.1"
   },
   "devDependencies": {
     "got": "^11.3.0",
@@ -27,12 +28,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/heroku/node-js-getting-started"
+    "url": "https://github.com/dcreado/42-backend"
   },
   "keywords": [
     "node",
     "heroku",
-    "express"
+    "express",
+    "auth0"
   ],
   "license": "MIT"
 }

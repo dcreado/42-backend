@@ -8,7 +8,7 @@ const jwksRsa = require('jwks-rsa');
 const authConfig = require('./auth_config.json');
 const faker = require('faker');
 const bodyParser = require("body-parser");
-
+const bauth = require('basic-auth');
 
 const app = express();
 
@@ -33,6 +33,13 @@ const checkJwt = jwt({
   audience: authConfig.audience,
   issuer: `https://${authConfig.domain}/`,
   algorithms: ['RS256'],
+});
+
+
+const { Pool } = require('pg');
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: false
 });
 
 
@@ -69,40 +76,101 @@ function respond(res) {
 }
 
 app.post('/api/order', checkJwt, (req, res) => {
-
   console.log(req.user.sub + " -> " + req.body);
-
   setTimeout(respond, 1500, res);
+});
+
+
+app.get('/api/profile', checkJwt, async (req, res) => {
+  try {
+    const text = 'select given_name, family_name, address, address2, city, state, zip from customers where email = $1'
+    const values = [req.user['https://pizza42.com/email']];
+    const client = await pool.connect();
+    const result = await client.query(text,values);
+    if(result.rowCount == 1){
+      res.status(200).json(result.rows[0]);
+    } else {
+      return res.status(500).send("sanity problem... the email was found on more than one account");
+    }
+
+    client.release();
+  } catch (err) {
+    console.error(err);
+    return res.status(500).send("General Error");
+  }
+});
+
+app.post('/api/profile', checkJwt, async (req, res) => {
+  try {
+    const text = `update customers set
+      given_name = $2,
+      family_name = $3,
+      address = $4,
+      address2 = $5,
+      city = $6,
+      state = $7,
+      zip = $8 where email = $1
+      RETURNING *`
+    const values = [req.user['https://pizza42.com/email'],
+                    req.body.given_name,
+                    req.body.family_name,
+                    req.body.address,
+                    req.body.address2,
+                    req.body.city,
+                    req.body.state,
+                    req.body.zip
+                  ];
+    const client = await pool.connect();
+    const result = await client.query(text,values);
+    if(result.rowCount == 1){
+      res.status(200).json(result.rows[0]);
+    } else {
+      return res.status(500).send("sanity problem... the email was found on more than one account");
+    }
+
+    client.release();
+  } catch (err) {
+    console.error(err);
+    return res.status(500).send("General Error");
+  }
 
 
 });
 
+app.get('/dump', async (req, res) => {
+    try {
+      const client = await pool.connect();
+      const result = await client.query('SELECT * FROM customers');
+      const results = { 'results': (result) ? result.rows : null};
+      res.json( results );
+      client.release();
+    } catch (err) {
+      console.error(err);
+      res.send("Error " + err);
+    }
+  })
 
-app.get('/api/profile', checkJwt, (req, res) => {
+  app.post('/api/login', async (req, res) => {
+      try {
+        var authentication = bauth(req);
+        const text = 'select email from customers where email = $1 and password = $2'
+        const values = [authentication.name, authentication.pass]
+        const client = await pool.connect();
+        const result = await client.query(text,values);
+        if(result.rowCount == 1){
+          res.status(200).json({"result": "success"});
+        } else {
+          return res.status(401).send("invalid username or password");
+        }
+
+        client.release();
+      } catch (err) {
+        console.error(err);
+        return res.status(401).send("invalid username or password");
+      }
+    })
 
 
-  var state = faker.address.state();
-  var acct = {
-    given_name: faker.name.firstName(),
-    family_name: faker.name.lastName(),
-    address: faker.address.streetAddress(),
-    address2: faker.address.secondaryAddress(),
-    city: faker.address.city(),
-    state: state,
-    zip: faker.address.zipCodeByState(state)
-  };
-  var userid = req.user.sub;
-
-  res.json(acct);
-});
-
-app.post('/api/profile', checkJwt, (req, res) => {
-  var userid = req.user.sub;
-  console.log(req.body);
-  res.json({
-    success: 200
-  });
-});
 
 const port = process.env.PORT || 3001;
 
